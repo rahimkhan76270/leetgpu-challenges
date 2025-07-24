@@ -7,8 +7,8 @@ class Challenge(ChallengeBase):
     def __init__(self):
         super().__init__(
             name="Ordinary Least Squares",
-            atol=1e-2,
-            rtol=1e-2,
+            atol=1e-02,
+            rtol=1e-02,
             num_gpus=1,
             access_tier="free"
         )

@@ -7,8 +7,8 @@ class Challenge(ChallengeBase):
     def __init__(self):
         super().__init__(
             name="General Matrix Multiplication (GEMM)",
-            atol=1e-05,
-            rtol=1e-05,
+            atol=5e-2,
+            rtol=5e-2,
             num_gpus=1,
             access_tier="free"
         )

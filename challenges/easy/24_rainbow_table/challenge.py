@@ -7,8 +7,8 @@ class Challenge(ChallengeBase):
     def __init__(self):
         super().__init__(
             name="Rainbow Table",
-            atol=1e-05,
-            rtol=1e-05,
+            atol=0,
+            rtol=0,
             num_gpus=1,
             access_tier="free"
         )
