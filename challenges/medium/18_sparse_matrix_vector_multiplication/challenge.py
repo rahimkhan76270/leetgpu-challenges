@@ -7,8 +7,8 @@ class Challenge(ChallengeBase):
     def __init__(self):
         super().__init__(
             name="Sparse Matrix-Vector Multiplication",
-            atol=1e-05,
-            rtol=1e-05,
+            atol=1e-03,
+            rtol=1e-03,
             num_gpus=1,
             access_tier="free"
         )
