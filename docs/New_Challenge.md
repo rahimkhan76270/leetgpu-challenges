@@ -2,17 +2,7 @@
 
 ## Description
 
-[Provide a clear, concise explanation of what the algorithm or function is supposed to do. Include the mathematical concept, the expected behavior, and what the output should represent.]
-
-**Input Format:** All inputs must be floating-point values.
-
-**Output:** [Specify what the output variable represents and its expected format/range]
-
-## Implementation Requirements
-
-- **No External Libraries:** Solutions must be implemented using only native features. No external libraries or frameworks are permitted.
-- **Function Signature:** The solve function signature is fixed and must not be modified. Implement your solution according to the provided signature.
-- **Output Variable:** Results must be written to the designated output parameter: `[output_parameter_name]`
+[Provide a clear, concise explanation of what the algorithm or function is supposed to do. Include input and output specifications, if necessary.]
 
 ### Mathematical Formulation
 
@@ -21,6 +11,14 @@
 $$
 \text{[Your formula here]}
 $$
+
+## Implementation Requirements
+
+- **No External Libraries:** Solutions must be implemented using only native features. No external libraries or frameworks are permitted.
+- **Function Signature:** The solve function signature is fixed and must not be modified. Implement your solution according to the provided signature.
+- **Output Variable:** Results must be written to the designated output parameter: `[output_parameter_name]`
+
+
 
 ## Examples
 
