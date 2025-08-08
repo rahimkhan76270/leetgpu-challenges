@@ -2,7 +2,7 @@
 
 LeetGPU challenges are low-level GPU programming tasks focused on writing custom CUDA, Triton, or Tinygrad kernels. They evaluate both functional correctness and performance under real GPU constraints.
 
-This guide provides detailed instructions for creating new GPU programming challenges for LeetGPU. It covers the complete process from concept to submission.
+This guide provides instructions for creating new GPU programming challenges for LeetGPU. It covers the complete process from concept to submission.
 
 ## Challenge Structure
 
@@ -20,20 +20,59 @@ challenges/<difficulty>/<number>_<name>/
     └── starter.triton.py    # Triton template
 ```
 
-## Creating the Challenge Files
+### Challenge.html template
 
-### Step 1: Choose Your Challenge Location
 
-1. Determine the appropriate difficulty level(easy, medium or hard)
-2. Create your challenge directory: `challenges/<difficulty>/<name>/`
+# [Challenge Name]
 
-### Step 2: Create the Basic Structure
+## Description
 
-```bash
-mkdir challenges/level_folder/your_challenge_name/
-cd challenges/level_folder/your_challenge_name/
-mkdir starter/
-touch challenge.html challenge.py
-touch starter/starter.cu starter/mojo starter/pytorch.py starter/tinygrad.py starter/triton.py
+[Provide a clear, concise explanation of what the algorithm or function is supposed to do. Include input and output specifications, if necessary.]
+
+### Mathematical Formulation
+
+[If applicable, provide the mathematical formula using LaTeX notation]
+
+$$
+\text{[Your formula here]}
+$$
+
+## Implementation Requirements
+
+- **No External Libraries:** Solutions must be implemented using only native features. No external libraries or frameworks are permitted.
+- **Function Signature:** The solve function signature is fixed and must not be modified. Implement your solution according to the provided signature.
+- **Output Variable:** Results must be written to the designated output parameter: `[output_parameter_name]`
+
+
+
+## Examples
+
+### Example 1
+**Input:**
 ```
+[Provide specific input values]
+```
+
+**Expected Output:**
+```
+[Show the corresponding output values]
+```
+
+### Example 2
+**Input:**
+```
+[Provide different input values]
+```
+
+**Expected Output:**
+```
+[Show the corresponding output values]
+```
+
+## Constraints
+
+- **Input Size:** [Specify the range of input dimensions, e.g., "1 ≤ N ≤ 1,000,000"]
+- **Value Range:** [Specify the range of input values, e.g., "-1000.0 ≤ input[i] ≤ 1000.0"]
+- **Memory Limits:** [If applicable, specify any memory constraints]
+
 
