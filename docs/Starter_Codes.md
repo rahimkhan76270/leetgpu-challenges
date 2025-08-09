@@ -19,7 +19,9 @@ Each framework has specific requirements:
 - Kernel functions with `__global__` qualifier(for easy problems)
 - `extern "C"` solve function for framework integration
 - Proper memory management and synchronization
-- Grid and block size calculations
+- Grid and block size 
+- 
+
 
 **Triton:**
 - `@triton.jit` decorator for kernel compilation
@@ -39,35 +41,115 @@ Each framework has specific requirements:
 - Simple, direct implementations
 
 
-Based on the algorithm requirements, determine:
-
-1. **Input parameters**: What data does the algorithm need?
-2. **Output parameters**: Where should results be written?
-3. **Size parameters**: What dimensions are involved?
-4. **Configuration parameters**: Any algorithm-specific settings?
-
-
-## Easy Problems templates
-
+## Easy Problems
 
 ### CUDA Starter Template
 
 ```cuda
 #include <cuda_runtime.h>
 
-__global__ void kernel_name(const float* input, float* output, int N) {
-    // TODO: Implement kernel logic
-    // Each thread processes one element
-    // Use threadIdx.x + blockIdx.x * blockDim.x to get global index
+__global__ void kernel_name() {
 }
 
 // input, output are device pointers (i.e. pointers to memory on the GPU)
-extern "C" void solve(const float* input, float* output, int N) {
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
-
-    kernel_name<<<blocksPerGrid, threadsPerBlock>>>(input, output, N);
+extern "C" void solve(input, output,size) {
+    
+    // define grid, block size
+    kernel_name<<<blocksPerGrid, threadsPerBlock>>>(input, output, size);
     cudaDeviceSynchronize();
+}
+```
+
+
+
+
+
+### Triton Starter Template
+
+```python
+# The use of PyTorch in Triton programs is not allowed for the purposes of fair benchmarking.
+import triton
+import triton.language as tl
+
+@triton.jit
+def kernel_name(input_ptr, output_ptr, input size, block size):
+    input_ptr = input_ptr.to(tl.pointer_type(tl.float32))
+    output_ptr = output_ptr.to(tl.pointer_type(tl.float32)) 
+    
+    # TODO: Implement kernel logic
+    # Use tl.program_id(0) to get block index
+    # Use tl.program_id(1) to get thread ndex within block
+
+# input_ptr, output_ptr are raw device pointers
+def solve(input_ptr, output_ptr, input size):    
+    # define grid, block size
+    kernel_name[grid](input_ptr, output_ptr, input size, block size)
+```
+
+
+
+
+
+### Mojo Starter Template
+
+```mojo
+from gpu.host import DeviceContext
+from gpu.id import block_dim, block_idx, thread_idx
+from memory import UnsafePointer
+from math import ceildiv
+
+fn kernel_name(input, output, size):
+    # TODO: Implement kernel logic
+    # Use thread_idx() to get thread index within block
+    # Use block_idx() to get block index
+    pass
+
+# input, output are device pointers (i.e. pointers to memory on the GPU)
+@export
+def solve(input, output, size):
+    #calculate threads per block
+    var ctx = DeviceContext()
+
+    ctx.enqueue_function[kernel_name](
+        input, output, size,
+        grid_dim = num_blocks,
+        block_dim = BLOCK_SIZE
+    )
+
+    ctx.synchronize()
+```
+
+### PyTorch Starter Template
+
+```python
+import torch
+
+def solve(input, output, size):
+    # TODO: Implement solution using PyTorch operations
+    pass
+```
+
+### TinyGrad Starter Template
+
+```python
+import tinygrad
+
+def solve(input, output, size):
+    # TODO: Implement solution using TinyGrad operations
+    pass
+```
+
+
+## Medium and Hard Problems
+
+### CUDA Starter Template
+
+```cuda
+#include <cuda_runtime.h>
+
+// input, output are device pointers (i.e. pointers to memory on the GPU)
+extern "C" void solve(input, output, size) {
+    
 }
 ```
 
@@ -78,21 +160,11 @@ extern "C" void solve(const float* input, float* output, int N) {
 import triton
 import triton.language as tl
 
-@triton.jit
-def kernel_name(input_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
-    input_ptr = input_ptr.to(tl.pointer_type(tl.float32))
-    output_ptr = output_ptr.to(tl.pointer_type(tl.float32)) 
-    
-    # TODO: Implement kernel logic
-    # Use tl.program_id(0) to get block index
-    # Use tl.program_id(1) to get thread ndex within block
-
 # input_ptr, output_ptr are raw device pointers
-def solve(input_ptr: int, output_ptr: int, N: int):    
-    BLOCK_SIZE = 1024
-    # define grid
-    kernel_name[grid](input_ptr, output_ptr, N, BLOCK_SIZE)
+def solve():    
+    pass
 ```
+
 
 ### Mojo Starter Template
 
@@ -102,26 +174,9 @@ from gpu.id import block_dim, block_idx, thread_idx
 from memory import UnsafePointer
 from math import ceildiv
 
-fn kernel_name(input: UnsafePointer[Float32], output: UnsafePointer[Float32], N: Int32):
-    # TODO: Implement kernel logic
-    # Use thread_idx() to get thread index
-    # Use block_idx() to get block index
-    pass
-
 @export
-def solve(input: UnsafePointer[Float32], output: UnsafePointer[Float32], N: Int32):
-    # define block, thread size
-    var ctx = DeviceContext()
+def solve(input, output, size):
 
-    # Launch the kernel using enqueue_function
-    ctx.enqueue_function[kernel_name](
-        input_ptr, output_ptr, N,
-        grid_dim  = num_blocks,     # Number of blocks in 1D grid
-        block_dim = BLOCK_SIZE      # Number of threads per block
-    )
-
-    ctx.synchronize()
-    # TODO: Implement solve function
     pass
 ```
 
@@ -130,7 +185,7 @@ def solve(input: UnsafePointer[Float32], output: UnsafePointer[Float32], N: Int3
 ```python
 import torch
 
-def solve(input: torch.Tensor, output: torch.Tensor, N: int):
+def solve(input, output, size):
     # TODO: Implement solution using PyTorch operations
     pass
 ```
@@ -140,9 +195,7 @@ def solve(input: torch.Tensor, output: torch.Tensor, N: int):
 ```python
 import tinygrad
 
-def solve(input: tinygrad.Tensor, output: tinygrad.Tensor, N: int):
+def solve(input, output, size):
     # TODO: Implement solution using TinyGrad operations
     pass
 ```
-
-For medium and hard problems, only define solve function for CUDA, Mojo and Triton.
