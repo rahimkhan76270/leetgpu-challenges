@@ -1,7 +1,7 @@
-# The use of PyTorch in Triton programs is not allowed for the purposes of fair benchmarking.
+import torch
 import triton
 import triton.language as tl
 
-# data_ptr is a raw device pointer
-def solve(data_ptr: int, N: int):
+# data is a tensor on the GPU
+def solve(data: torch.Tensor, N: int):
     pass
