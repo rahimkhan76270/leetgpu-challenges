@@ -24,7 +24,7 @@ class Challenge(ChallengeBase):
         assert input.shape == output.shape == (N * N,)
         assert P >= 1
 
-        mat = input.view(N, N).double()
+        mat = input.view(N, N)
         result = torch.linalg.matrix_power(mat, P).float()
         output[:] = result.reshape(-1)
 
@@ -107,8 +107,8 @@ class Challenge(ChallengeBase):
 
     def generate_performance_test(self) -> Dict[str, Any]:
         dtype = torch.float32
-        N = 512
-        P = 3
+        N = 1024
+        P = 5 
         return {
             "input": torch.empty((N, N), device="cuda", dtype=dtype).uniform_(-10.0, 10.0).flatten(),
             "output": torch.zeros((N, N), device="cuda", dtype=dtype).flatten(),
