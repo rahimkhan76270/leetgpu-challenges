@@ -18,10 +18,6 @@ class Challenge(ChallengeBase):
                       kernel_size: int, stride: int, padding: int):
         input_tensor = input_ptr.view(N, C, H, W)
         
-        # Calculate output dimensions
-        H_out = (H + 2 * padding - kernel_size) // stride + 1
-        W_out = (W + 2 * padding - kernel_size) // stride + 1
-        
         # Apply max pooling
         result = torch.nn.functional.max_pool2d(
             input_tensor, 
@@ -184,7 +180,7 @@ class Challenge(ChallengeBase):
         
         # Test case 7: Large padding relative to input size
         N, C, H, W = 1, 1, 4, 4
-        kernel_size, stride, padding = 2, 1, 2
+        kernel_size, stride, padding = 2, 1, 1
         H_out = (H + 2*padding - kernel_size) // stride + 1
         W_out = (W + 2*padding - kernel_size) // stride + 1
         
