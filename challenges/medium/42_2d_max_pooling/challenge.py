@@ -13,10 +13,10 @@ class Challenge(ChallengeBase):
             access_tier="free"
         )
         
-    def reference_impl(self, input_ptr: torch.Tensor, output_ptr: torch.Tensor, 
+    def reference_impl(self, input: torch.Tensor, output: torch.Tensor, 
                       N: int, C: int, H: int, W: int,
                       kernel_size: int, stride: int, padding: int):
-        input_tensor = input_ptr.view(N, C, H, W)
+        input_tensor = input.view(N, C, H, W)
         
         # Apply max pooling
         result = torch.nn.functional.max_pool2d(
@@ -26,12 +26,12 @@ class Challenge(ChallengeBase):
             padding=padding
         )
     
-        output_ptr.copy_(result.flatten())
+        output.copy_(result.flatten())
         
     def get_solve_signature(self) -> Dict[str, Any]:
         return {
-            "input_ptr": ctypes.POINTER(ctypes.c_float),
-            "output_ptr": ctypes.POINTER(ctypes.c_float),
+            "input": ctypes.POINTER(ctypes.c_float),
+            "output": ctypes.POINTER(ctypes.c_float),
             "N": ctypes.c_int,
             "C": ctypes.c_int,
             "H": ctypes.c_int,
@@ -58,8 +58,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         return {
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N,
             "C": C,
             "H": H,
@@ -90,8 +90,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -106,8 +106,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -122,8 +122,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -138,8 +138,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -154,8 +154,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -172,8 +172,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -191,8 +191,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -212,8 +212,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -233,8 +233,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -249,8 +249,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         test_cases.append({
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         })
@@ -273,8 +273,8 @@ class Challenge(ChallengeBase):
         output_tensor = torch.empty(N * C * H_out * W_out, device="cuda", dtype=dtype)
         
         return {
-            "input_ptr": input_tensor.flatten(),
-            "output_ptr": output_tensor,
+            "input": input_tensor.flatten(),
+            "output": output_tensor,
             "N": N, "C": C, "H": H, "W": W,
             "kernel_size": kernel_size, "stride": stride, "padding": padding
         }
