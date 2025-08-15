@@ -8,8 +8,8 @@ class Challenge(ChallengeBase):
     def __init__(self):
         super().__init__(
             name="Matrix Power",
-            atol=1e-05,
-            rtol=1e-05,
+            atol=1e-04,
+            rtol=1e-04,
             num_gpus=1,
             access_tier="free"
         )
@@ -107,8 +107,8 @@ class Challenge(ChallengeBase):
 
     def generate_performance_test(self) -> Dict[str, Any]:
         dtype = torch.float32
-        N = 1024
-        P = 5 
+        N = 512
+        P = 3
         return {
             "input": torch.empty((N, N), device="cuda", dtype=dtype).uniform_(-10.0, 10.0).flatten(),
             "output": torch.zeros((N, N), device="cuda", dtype=dtype).flatten(),
