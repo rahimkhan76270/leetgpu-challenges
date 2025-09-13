@@ -1,7 +1,14 @@
 #include <cuda_runtime.h>
 
 __global__ void swiglu_kernel(const float* input, float* output, int halfN) {
-
+    int idx=blockIdx.x*blockDim.x+threadIdx.x;
+    if (idx<halfN)
+    {
+        float val=input[idx];
+        float silu=val/(1+expf(-val));
+        output[idx]=silu*input[idx+halfN];
+    }
+    
 }
 
 // input, output are device pointers

@@ -1,17 +1,17 @@
 import ctypes
 from typing import Any, List, Dict
 import torch
-from core.challenge_base import ChallengeBase
+import os
+from pathlib import Path
 
-class Challenge(ChallengeBase):
+
+class Challenge:
     def __init__(self):
-        super().__init__(
-            name="Fast Fourier Transform",
-            atol=1e-3,         
-            rtol=1e-3,
-            num_gpus=1,
-            access_tier="free"
-        )
+        self.name="Fast Fourier Transform"
+        self.atol=1e-3         
+        self.rtol=1e-3
+        self.num_gpus=1
+        self.access_tier="free"
 
     def reference_impl(self, signal: torch.Tensor, spectrum: torch.Tensor, N: int):
         """
@@ -104,3 +104,107 @@ class Challenge(ChallengeBase):
         big_sig = torch.empty(2 * N, device="cuda", dtype=dtype).normal_(0.0, 1.0)
         big_spec = torch.empty_like(big_sig)
         return {"signal": big_sig, "spectrum": big_spec, "N": N}
+    
+
+
+
+def load_cuda_lib():
+    # Compile the CUDA code first
+    cuda_file = Path("starter/starter.cu")
+    lib_file = Path("starter/libfft.so")
+    
+    # Compile the CUDA code
+    os.system(f"nvcc -o {lib_file} --shared -Xcompiler -fPIC {cuda_file}")
+    
+    # Load the compiled library
+    cuda_lib = ctypes.CDLL(str(lib_file))
+    return cuda_lib
+
+def test_fft():
+    # Initialize the challenge
+    challenge = Challenge()
+    
+    # Load the CUDA library
+    cuda_lib = load_cuda_lib()
+    
+    # Get the solve function and set its argument types
+    solve_func = cuda_lib.solve
+    solve_func.argtypes = [
+        ctypes.POINTER(ctypes.c_float),  # signal
+        ctypes.POINTER(ctypes.c_float),  # spectrum
+        ctypes.c_int                     # N
+    ]
+    
+    def run_test(test_case):
+        input_tensor = test_case["signal"]
+        output_cuda = test_case["spectrum"].clone()
+        output_torch = test_case["spectrum"].clone()
+        # N = test_case["N"]
+
+        
+        print("\nTest case details:")
+        print(f"Input shape: {input_tensor.shape}")
+
+        # Run reference implementation
+        challenge.reference_impl(
+            input_tensor, output_torch,
+            test_case["N"]
+        )
+        print(f"PyTorch result: {output_torch.cpu().numpy()}")
+
+        # Convert CUDA tensor pointers to ctypes
+        input_ptr = ctypes.cast(input_tensor.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        output_ptr = ctypes.cast(output_cuda.data_ptr(), ctypes.POINTER(ctypes.c_float))
+
+        # Run CUDA implementation
+        solve_func(
+            input_ptr, output_ptr,
+            test_case["N"]
+        )
+        print(f"CUDA result: {output_cuda.cpu().numpy()}")
+
+        try:
+            torch.testing.assert_close(
+                output_cuda, 
+                output_torch, 
+                rtol=challenge.rtol, 
+                atol=challenge.atol,
+                msg="CUDA and PyTorch results don't match"
+            )
+            return True
+        except AssertionError as e:
+            print("\nError details:")
+            print(f"Expected (PyTorch): {output_torch.cpu().numpy()}")
+            print(f"Got (CUDA): {output_cuda.cpu().numpy()}")
+            print(f"Absolute difference: {torch.abs(output_cuda - output_torch).cpu().numpy()}")
+            raise e
+
+    # Run example test
+    print("Running example test...")
+    example_test = challenge.generate_example_test()
+    run_test(example_test)
+    print("Example test passed!")
+
+    # Run functional tests
+    print("\nRunning functional tests...")
+    for i, test_case in enumerate(challenge.generate_functional_test()):
+        try:
+            run_test(test_case)
+            print(f"Functional test {i+1} passed!")
+        except AssertionError as e:
+            print(f"Functional test {i+1} failed:", e)
+
+    # Run performance test
+    print("\nRunning performance test...")
+    perf_test = challenge.generate_performance_test()
+    try:
+        run_test(perf_test)
+        print("Performance test passed!")
+    except AssertionError as e:
+        print("Performance test failed:", e)
+
+if __name__ == "__main__":
+    test_fft()
+
+
+

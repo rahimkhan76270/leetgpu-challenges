@@ -1,17 +1,16 @@
 import ctypes
 from typing import Any, List, Dict
 import torch
-from core.challenge_base import ChallengeBase
+# from core.challenge_base import ChallengeBase
 
-class Challenge(ChallengeBase):
+class Challenge:
     def __init__(self):
-        super().__init__(
-            name="Vector Addition",
-            atol=1e-05,
-            rtol=1e-05,
-            num_gpus=1,
-            access_tier="free"
-        )
+        self.name="Vector Addition"
+        self.atol=1e-05
+        self.rtol=1e-05
+        self.num_gpus=1
+        self.access_tier="free"
+    
         
     def reference_impl(self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, N: int):
         assert A.shape == B.shape == C.shape

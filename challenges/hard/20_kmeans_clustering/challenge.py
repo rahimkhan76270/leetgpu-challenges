@@ -1,17 +1,16 @@
 import ctypes
 from typing import Any, List, Dict
 import torch
-from core.challenge_base import ChallengeBase
+from pathlib import Path
+import os
 
-class Challenge(ChallengeBase):
+class Challenge:
     def __init__(self):
-        super().__init__(
-            name="K-Means Clustering",
-            atol=1e-04,
-            rtol=1e-04,
-            num_gpus=1,
-            access_tier="free"
-        )
+        self.name="K-Means Clustering"
+        self.atol=1e-04
+        self.rtol=1e-04
+        self.num_gpus=1
+        self.access_tier="free"
         
     def reference_impl(self, data_x: torch.Tensor, data_y: torch.Tensor, labels: torch.Tensor, initial_centroid_x: torch.Tensor, initial_centroid_y: torch.Tensor, final_centroid_x: torch.Tensor, final_centroid_y: torch.Tensor, sample_size: int, k: int, max_iterations: int):
         assert data_x.shape == (sample_size,)
@@ -201,3 +200,138 @@ class Challenge(ChallengeBase):
             "k": k,
             "max_iterations": 30
         } 
+    
+
+
+def load_cuda_lib():
+    # Compile the CUDA code first
+    cuda_file = Path("starter/starter.cu")
+    lib_file = Path("starter/libkmeans.so")
+    # Compile the CUDA code
+    os.system(f"nvcc -o {lib_file} --shared -Xcompiler -fPIC {cuda_file}")
+    
+    # Load the compiled library
+    cuda_lib = ctypes.CDLL(str(lib_file))
+    return cuda_lib
+
+def test_kmeans():
+    # Initialize the challenge
+    challenge = Challenge()
+    
+    # Load the CUDA library
+    cuda_lib = load_cuda_lib()
+    
+    # Get the solve function and set its argument types
+    solve_func = cuda_lib.solve
+    solve_func.argtypes = list(challenge.get_solve_signature().values())
+
+    def run_test(test_case):
+        # Extract test case data
+        data_x = test_case["data_x"]
+        data_y = test_case["data_y"]
+        labels = test_case["labels"]
+        initial_centroid_x = test_case["initial_centroid_x"]
+        initial_centroid_y = test_case["initial_centroid_y"]
+        final_centroid_x = test_case["final_centroid_x"]
+        final_centroid_y = test_case["final_centroid_y"]
+        sample_size = test_case["sample_size"]
+        k = test_case["k"]
+        max_iterations = test_case["max_iterations"]
+
+        # Create copies for CUDA and PyTorch results
+        cuda_final_x = final_centroid_x.clone()
+        cuda_final_y = final_centroid_y.clone()
+        torch_final_x = final_centroid_x.clone()
+        torch_final_y = final_centroid_y.clone()
+        cuda_labels = labels.clone()
+        torch_labels = labels.clone()
+
+        print("\nTest case details:")
+        print(f"Sample size: {sample_size}, k: {k}, max_iterations: {max_iterations}")
+
+        # Run reference implementation
+        challenge.reference_impl(
+            data_x, data_y, torch_labels,
+            initial_centroid_x, initial_centroid_y,
+            torch_final_x, torch_final_y,
+            sample_size, k, max_iterations
+        )
+
+        # Convert CUDA tensor pointers to ctypes
+        data_x_ptr = ctypes.cast(data_x.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        data_y_ptr = ctypes.cast(data_y.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        labels_ptr = ctypes.cast(cuda_labels.data_ptr(), ctypes.POINTER(ctypes.c_int))
+        initial_x_ptr = ctypes.cast(initial_centroid_x.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        initial_y_ptr = ctypes.cast(initial_centroid_y.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        final_x_ptr = ctypes.cast(cuda_final_x.data_ptr(), ctypes.POINTER(ctypes.c_float))
+        final_y_ptr = ctypes.cast(cuda_final_y.data_ptr(), ctypes.POINTER(ctypes.c_float))
+
+        # Run CUDA implementation
+        solve_func(
+            data_x_ptr, data_y_ptr, labels_ptr,
+            initial_x_ptr, initial_y_ptr,
+            final_x_ptr, final_y_ptr,
+            sample_size, k, max_iterations
+        )
+
+        try:
+            # Check centroids
+            torch.testing.assert_close(
+                cuda_final_x, 
+                torch_final_x,
+                rtol=challenge.rtol, 
+                atol=challenge.atol,
+                msg="CUDA and PyTorch centroid X results don't match"
+            )
+            torch.testing.assert_close(
+                cuda_final_y, 
+                torch_final_y,
+                rtol=challenge.rtol, 
+                atol=challenge.atol,
+                msg="CUDA and PyTorch centroid Y results don't match"
+            )
+            # Check labels
+            torch.testing.assert_close(
+                cuda_labels,
+                torch_labels,
+                msg="CUDA and PyTorch labels don't match"
+            )
+            return True
+        except AssertionError as e:
+            print("\nError details:")
+            print(f"Expected centroids X (PyTorch): {torch_final_x.cpu().numpy()}")
+            print(f"Got centroids X (CUDA): {cuda_final_x.cpu().numpy()}")
+            print(f"Expected centroids Y (PyTorch): {torch_final_y.cpu().numpy()}")
+            print(f"Got centroids Y (CUDA): {cuda_final_y.cpu().numpy()}")
+            print(f"Expected labels (PyTorch): {torch_labels.cpu().numpy()}")
+            print(f"Got labels (CUDA): {cuda_labels.cpu().numpy()}")
+            raise e
+
+    # Run example test
+    print("Running example test...")
+    example_test = challenge.generate_example_test()
+    run_test(example_test)
+    print("Example test passed!")
+
+    # Run functional tests
+    print("\nRunning functional tests...")
+    for i, test_case in enumerate(challenge.generate_functional_test()):
+        try:
+            run_test(test_case)
+            print(f"Functional test {i+1} passed!")
+        except AssertionError as e:
+            print(f"Functional test {i+1} failed:", e)
+            raise e
+
+    # Run performance test
+    print("\nRunning performance test...")
+    perf_test = challenge.generate_performance_test()
+    try:
+        run_test(perf_test)
+        print("Performance test passed!")
+    except AssertionError as e:
+        print("Performance test failed:", e)
+        raise e
+
+if __name__ == "__main__":
+    test_kmeans()

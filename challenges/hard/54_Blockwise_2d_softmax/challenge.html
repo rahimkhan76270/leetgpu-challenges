@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Blockwise Online Softmax — Challenge</title>
+    <style>
+        body {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            line-height: 1.5;
+            padding: 28px;
+            color: #0b1220;
+            background: #fbfdff;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 0.2rem;
+        }
+
+        h2 {
+            font-size: 1.15rem;
+            margin-top: 1.1rem;
+        }
+
+        p,
+        li,
+        pre {
+            font-size: 0.95rem;
+        }
+
+        pre {
+            background: #f3f6fb;
+            padding: 12px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+
+        code {
+            background: #eef5ff;
+            padding: 0.1rem 0.2rem;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+        }
+
+        ul {
+            margin-left: 1.05rem;
+        }
+
+        .note {
+            background: #fff8e6;
+            border-left: 4px solid #ffd166;
+            padding: 8px 12px;
+            margin: 12px 0;
+            border-radius: 6px;
+        }
+
+        .constraints {
+            background: #f7f7fc;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Blockwise Online Softmax — Challenge</h1>
+
+    <p>
+        Implement a GPU program that computes a numerically-stable, <strong>row-wise softmax</strong>
+        for a 2D matrix using a blockwise online algorithm. The input is a dense
+        <code>rows × cols</code> matrix of 32-bit floating-point values (row-major). Your kernel
+        should compute the softmax across each row independently and write the result
+        to the <code>output</code> matrix (same shape and layout).
+    </p>
+
+    <h2>Softmax definition</h2>
+    <p>
+        For each row vector <code>x</code> of length <code>cols</code> compute:
+    </p>
+    <pre><code>
+softmax(x)_j = exp(x_j - m) / &sum;<sub>t</sub> exp(x_t - m)
+where m = max(x_t)  (the maximum of the row, used for numerical stability)
+  </code></pre>
+
+    <h2>Why blockwise / online?</h2>
+    <p>
+        For very wide rows we cannot necessarily load an entire row into fast on-chip/shared
+        memory. A blockwise online algorithm computes the per-row maximum and the
+        running (exponentially-shifted) sum over blocks so the softmax can be evaluated
+        in a streaming fashion with bounded temporary storage per block while maintaining
+        numerical stability. Your final implementation must be fully GPU-resident and
+        operate row-by-row using a blockwise online approach (or an equivalent stable approach).
+    </p>
+
+    <h2>Implementation requirements</h2>
+    <ul>
+        <li>No external libraries (cuDNN/cuBLAS/cuFFT/etc.) — only CUDA runtime and device code.</li>
+        <li>The <code>solve</code> function signature must remain exactly:
+            <pre><code>extern "C" void solve(const float* input, float* output, int rows, int cols);</code></pre>
+            where <code>input</code> and <code>output</code> are device pointers to row-major
+            float32 matrices of shape <code>(rows, cols)</code>.
+        </li>
+        <li>All computation (including multi-pass reduction across blocks if needed)
+            must run on the GPU — no host-side reductions allowed.</li>
+        <li>The kernel must produce one valid softmaxed row per input row in <code>output</code>.</li>
+        <li>Input and output are simple contiguous <code>float</code> arrays (C row-major):
+            <pre><code>input[r * cols + c]  // row r, column c</code></pre>
+        </li>
+        <li>Numerical stability: use a stable online reduction (tracking running max and scaled sum)
+            so results avoid overflow/underflow.</li>
+    </ul>
+
+    <h2>API / Data layout</h2>
+    <p>
+        The host will call <code>solve</code> with device pointers. Your kernel entry point must
+        follow this layout (and the testing harness expects exactly this signature):
+    </p>
+    <pre><code>
+extern "C" void solve(const float* input, float* output, int rows, int cols);
+  </code></pre>
+    <p>
+        Both <code>input</code> and <code>output</code> point to <code>rows × cols</code> floats
+        in row-major order. The result must be written to <code>output</code>.
+    </p>
+
+    <h2>Examples</h2>
+
+    <h3>Example 1 — small 2×4 matrix</h3>
+    <pre><code>
+Input:
+rows = 2, cols = 4
+input = [
+  [1.0, 2.0, 3.0, 4.0],
+  [2.0, 1.0, 0.0, -1.0]
+]
+
+Output (each row softmaxed):
+output = [
+  [0.0320586, 0.0871443, 0.236883,  0.643915],
+  [0.659001,  0.242433, 0.089915,  0.008651]
+]
+  </code></pre>
+
+    <h3>Example 2 — identical elements</h3>
+    <pre><code>
+rows = 1, cols = 3
+input = [ [5.0, 5.0, 5.0] ]
+output = [ [1/3, 1/3, 1/3] ]
+  </code></pre>
+
+    <h2>Constraints & tolerances</h2>
+    <div class="constraints">
+        <ul>
+            <li><code>1 ≤ rows ≤ 65536</code></li>
+            <li><code>1 ≤ cols ≤ 262144</code></li>
+            <li>Total elements (rows × cols) will fit in device memory for the target grader.</li>
+            <li>All values are 32-bit IEEE floats.</li>
+            <li>Absolute error &le; <code>1e-4</code> and relative error &le; <code>1e-4</code> when compared to a
+                reference row-wise <code>torch.softmax(x, dim=-1)</code>.</li>
+        </ul>
+    </div>
+
+    <h2>Grading notes</h2>
+    <ul>
+        <li>Correctness: each row must approximate the softmax to within the tolerances above.</li>
+        <li>Numerical stability: naive exp(x) implementations will fail for large magnitudes — use the
+            standard max-shift technique or a numerically-stable online algorithm when processing blocks.</li>
+        <li>Performance (informal): blockwise shared-memory implementations that reuse per-block reductions
+            will be faster for wide matrices. The grader primarily checks correctness; optimized implementations
+            receive better runtime on large tests.</li>
+        <li>Memory: you may use shared memory and per-block temporary arrays, but final result must be written
+            to the provided <code>output</code> array.</li>
+    </ul>
+
+    <h2>Reference behavior</h2>
+    <p>
+        The intended reference for correctness is row-wise softmax computed with PyTorch:
+    </p>
+    <pre><code>
+# reference (host-side)
+import torch
+out = torch.softmax(input_tensor, dim=-1)
+  </code></pre>
+
+    <h2>Edge cases</h2>
+    <ul>
+        <li>Rows with very large positive or negative values (e.g., &pm;1e3 or more)</li>
+        <li>Very wide rows where <code>cols</code> exceeds shared memory limits — ensure blockwise algorithm
+            accumulates maxima and (shifted) exponent sums across blocks correctly.</li>
+        <li>cols = 1 (softmax should return 1.0 for every row)</li>
+    </ul>
+
+    <h2>Helpful hints</h2>
+    <ul>
+        <li>Two-pass blockwise pattern (common):
+            <ol>
+                <li>Pass 1 (per-block): compute block maxima for each row → reduce to row max.</li>
+                <li>Pass 2 (per-block): using row max, compute sum of exp(x - max) across blocks → reduce to row sum.
+                </li>
+                <li>Pass 3 (per-block): write exp(x - max) / sum to output slots.</li>
+            </ol>
+        </li>
+        <li>Alternatively use an online (streaming) update for max & scaled sums in a single sweep across blocks,
+            carefully combining partial results to preserve numerical stability.</li>
+    </ul>
+
+    <div class="note">
+        <strong>Note:</strong> The grader expects the kernel(s) to be fully GPU-resident (no host-side loops performing
+        reductions)
+        and the <code>solve</code> symbol to be exported from the compiled shared object with the signature shown above.
+    </div>
+
+    <p style="margin-top:18px">Good luck — implement a stable blockwise softmax that works for very wide rows and large
+        matrices!</p>
+</body>
+
+</html>
